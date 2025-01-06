@@ -37,6 +37,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       req.signal?.addEventListener("abort", () => {
         // Remove the client's controller when the user disconnects
         clients[userId] = null
+        // 主动发布下线消息到 MQTT
+        if (mqttClients[userId]) {
+          mqttClients[userId]?.publish(
+            `ClientList/online/${session?.username}`,
+            "no", // 发布用户下线消息
+            { retain: true } // 保留消息，确保 MQTT 客户端会接收到
+          )
+          console.log(`User ${userId} is now offline.`)
+        }
         // Clean up MQTT client when the last SSE client disconnects
         if (clients[userId] === null && mqttClients[userId]) {
           mqttClients[userId]?.end() // Close MQTT client connection
@@ -46,6 +55,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     },
     cancel() {
       // Cleanup when the stream is canceled (client disconnects)
+      // 取消流时，主动发布下线消息到 MQTT
+      if (mqttClients[userId]) {
+        mqttClients[userId]?.publish(
+          `ClientList/online/${session?.username}`,
+          "no", // 发布用户下线消息
+          { retain: true } // 保留消息，确保 MQTT 客户端会接收到
+        )
+        console.log(`User ${userId} is now offline.`)
+      }
       clients[userId] = null
       if (mqttClients[userId]) {
         mqttClients[userId]?.end() // Close MQTT client connection
@@ -68,16 +86,25 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         clean: true,
         keepalive: 30,
         rejectUnauthorized: false,
+        will: {
+          topic: `ClientList/online/${session?.username}`,
+          payload: "no",
+          retain: true,
+        },
       }
     )
 
     mqttClients[userId].on("connect", () => {
       console.log(`User ${userId} connected to MQTT broker`)
+      mqttClients[userId]?.publish(
+        `ClientList/online/${session?.username}`,
+        "yes",
+        { retain: true }
+      )
       mqttClients[userId]?.subscribe("#") // Replace with your topic
     })
 
     mqttClients[userId].on("message", (topic, message) => {
-
       // Create a message object to send the topic and message
       const data = {
         topic: topic,
@@ -91,7 +118,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       }
     })
   }
-  
+
   // Return the response (SSE stream)
   return response
 }
@@ -109,16 +136,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const userId = session.username // Use username as unique identifier
 
   // Get message and topic from the request body
-  const { message, topic } = await req.json()
-
-  if (!message || !topic) {
-    return new NextResponse("Message and topic are required", { status: 400 })
+  const { message, topic, type, retain } = await req.json()
+  console.log(message, topic, type, retain)
+  let newMessage = message
+  if (type === "locked") {
+    newMessage = session.username
   }
+
+  // if (!message || !topic) {
+  //   return new NextResponse("Message and topic are required", { status: 400 })
+  // }
 
   // If MQTT client for the user exists, publish the message
   if (mqttClients[userId]) {
     try {
-      mqttClients[userId]?.publish(topic, message, { qos: 1 })
+      mqttClients[userId]?.publish(topic, newMessage, { retain })
 
       console.log(`Message published to ${topic}: ${message}`)
       return new NextResponse("Message published successfully", { status: 200 })

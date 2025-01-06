@@ -2,24 +2,82 @@ import { useMQTTStore } from "./store"
 
 export interface BufferMessage {
   type: "Buffer"
-  data: number[] // 字节数组
+  data: number[]
 }
 export function handleMessage(topic: string, message: BufferMessage) {
   if (topic.startsWith("VinList/")) {
     const sid = topic.split("/")[1]
-    console.log(`Received vinlist message from ${sid},${decodeMessage(message as BufferMessage)}`)
-    useMQTTStore.getState().addDevice(sid)
-
+    const messageType = topic.split("/")[2]
+    if (
+      messageType === "online" &&
+      decodeMessage(message).toString() !== "\0" &&
+      decodeMessage(message).toString() !== "offline"
+    ) {
+      useMQTTStore.getState().updateDevice({
+        sid,
+        vin: decodeMessage(message).toString().split(",")[0],
+        online: true,
+      })
+    }
+    if (
+      messageType === "online" &&
+      decodeMessage(message).toString() === "offline" &&
+      decodeMessage(message).toString() === "\0"
+    ) {
+      useMQTTStore.getState().updateDevice({
+        sid,
+        online: false,
+        locked: "free",
+      })
+    }
+    if (messageType === "locked") {
+      useMQTTStore.getState().updateDevice({
+        sid,
+        locked: decodeMessage(message).toString(),
+      })
+    }
   }
-  if (topic.includes('doip')){
-    console.log(`Received doip message from ${topic},${decodeBinMessage(message).toString('hex')}`)
+  if (topic.startsWith("V/")) {
+    const sid = topic.split("/")[1]
+    if (decodeBinMessage(message).toString("hex").slice(8, 12) === "7e00") {
+      const ecu = decodeBinMessage(message).toString("hex").slice(0, 4)
+      if (sid === useMQTTStore.getState().currentSid) {
+        useMQTTStore.getState().updateECUList(ecu)
+      }
+    }
   }
 }
 
 export function decodeMessage(message: BufferMessage) {
-  return new TextDecoder().decode(new Uint8Array(message.data),)
+  return new TextDecoder().decode(new Uint8Array(message.data))
 }
 
 export function decodeBinMessage(message: BufferMessage) {
-    return Buffer.from(message.data)
+  return Buffer.from(message.data)
+}
+
+export const publishMessage = async (
+  topic: string,
+  message?: string,
+  type?: string,
+  retain: boolean = false
+) => {
+  try {
+    console.log(topic, message, type, retain)
+    const response = await fetch("/api/mqtt", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ topic, message, type, retain }),
+    })
+
+    if (response.ok) {
+      console.log("Message published successfully")
+    } else {
+      console.error("Failed to publish message")
+    }
+  } catch (error) {
+    console.error("Error publishing message:", error)
+  }
 }
