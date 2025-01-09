@@ -1,0 +1,32 @@
+export const DefaultPublishPayload = {
+  can1: { speed: 500, enabled: "yes" },
+  can2: { speed: 500, enabled: "yes" },
+  doip_ecus: [
+    {
+      address: "1716",
+      DIDs: ["dd00", "dd06", "dd02"],
+      trigger_DTCs: [],
+      entity: "1716",
+    },
+    { address: "14b3", DIDs: ["dd00"], trigger_DTCs: [], entity: "1716" },
+    {
+      address: "1726",
+      DIDs: ["dd00", "dd06", "dd02"],
+      trigger_DTCs: [],
+      entity: "1716",
+    },
+  ],
+  adc1: { channels: [16, 2, 6, 9, 10, 15, 18, 19], sampling_speed: 7 },
+  adc2: { channels: [3, 5], sampling_speed: 6 },
+  adc3: { channels: [21, 22, 1, 0, 2, 3, 4, 5, 8, 9], sampling_speed: 7 },
+  gateway_mirror: { platform: "eva2", value: "0x10" },
+  canfd_1: { arbitration_speed: 500, data_speed: 1000 },
+  canfd_2: { arbitration_speed: 500, data_speed: 1000 },
+  canfd_3: { arbitration_speed: 500, data_speed: 1000 },
+  canfd_4: { arbitration_speed: 500, data_speed: 1000 },
+  adc: { channels_mapping: 44218, sampling_speed: 50 },
+  lin1: { speed: 19200 },
+  lin2: { speed: 19200 },
+  lin3: { speed: 19200 },
+  lin4: { speed: 19200 },
+}

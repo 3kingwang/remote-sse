@@ -137,15 +137,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // Get message and topic from the request body
   const { message, topic, type, retain } = await req.json()
-  console.log(message, topic, type, retain)
   let newMessage = message
   if (type === "locked") {
     newMessage = session.username
   }
+  if (type === 'doip'){
+    newMessage = Buffer.from(message,'hex')
+  }
 
-  // if (!message || !topic) {
-  //   return new NextResponse("Message and topic are required", { status: 400 })
-  // }
 
   // If MQTT client for the user exists, publish the message
   if (mqttClients[userId]) {

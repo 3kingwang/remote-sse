@@ -10,9 +10,13 @@ import { Badge } from "./ui/badge"
 
 export function VinList() {
   const devices = useMQTTStore((state) => state.devices)
-  const updateCurrentSid = useMQTTStore((state) => state.updateCurrentSid)
+  const updateCurrentDevice = useMQTTStore((state) => state.updateCurrentDevice)
+ 
   return (
-    <Select onValueChange={(value) => updateCurrentSid(value)}>
+    <Select  onValueChange={(value) => {
+      updateCurrentDevice(value)
+
+      }}>
       <SelectTrigger className="w-[270px]">
         <SelectValue placeholder="Select a device" />
       </SelectTrigger>
@@ -26,7 +30,7 @@ export function VinList() {
                   {device.locked === "free" ? (
                     <span style={{ color: "green", fontSize: "20px" }}>●</span>
                   ) : (
-                    <Badge variant="destructive">{device.locked}</Badge>
+                    <Badge>{device.locked}</Badge>
                   )}
                 </div>
               </SelectItem>

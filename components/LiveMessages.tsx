@@ -13,37 +13,44 @@ import {
 import { Label } from "./ui/label"
 import { VinList } from "./VinList"
 import { EcuList } from "./EcuList"
+import { LiveData } from "./LiveData"
+
 
 const LiveMessages = () => {
-  const [, setError] = useState<string | null>(null) // For handling errors
+  const [error, setError] = useState<string | null>(null) // For 
   useEffect(() => {
-    // Create a new EventSource to listen for messages from the server
-    const eventSource = new EventSource("/api/mqtt")
+    
+    const connectToServer = () => {
+      const eventSource = new EventSource("/api/mqtt")
 
-    // Listen for incoming messages
-    eventSource.addEventListener("message", (event) => {
-      try {
-        const data = JSON.parse(event.data) // Parse the incoming JSON data
-
-        // Ensure the data has both topic and message
-        if (data && data.topic && data.message) {
-          // Update the state with the new message
-          handleMessage(data.topic, data.message)
+      eventSource.addEventListener("message", (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          if (data && data.topic && data.message) {
+            handleMessage(data.topic, data.message)
+          }
+        } catch (err) {
+          setError("Failed to process incoming message.")
+          console.error("Error parsing SSE message:", err)
         }
-      } catch (err) {
-        setError("Failed to process incoming message.")
-        console.error("Error parsing SSE message:", err)
-      }
-    })
+      })
 
-    // Listen for error events
-    eventSource.addEventListener("error", () => {
-      if (eventSource.readyState === EventSource.CLOSED) {
-        setError("Connection closed by server.")
-      } else {
-        setError("Error in receiving SSE.")
-      }
-    })
+      eventSource.addEventListener("error", () => {
+        if (eventSource.readyState === EventSource.CLOSED) {
+          setError("Connection closed by server.")
+        } else {
+          setError("Error in receiving SSE.")
+        }
+
+        // 尝试重新连接
+        setTimeout(connectToServer, 3000) // 3秒后重新连接
+      })
+
+      return eventSource
+    }
+
+    // 初始化连接
+    const eventSource = connectToServer()
 
     // Cleanup the connection when the component is unmounted
     return () => {
@@ -53,6 +60,7 @@ const LiveMessages = () => {
 
   return (
     <div>
+      {error && <div className="error-message">{error}</div>}
       <Card>
         <CardHeader>
           <CardTitle>Online Devices</CardTitle>
@@ -71,6 +79,7 @@ const LiveMessages = () => {
           </div>
         </CardContent>
       </Card>
+      <LiveData />
     </div>
   )
 }

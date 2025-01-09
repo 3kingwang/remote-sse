@@ -21,8 +21,8 @@ export function handleMessage(topic: string, message: BufferMessage) {
     }
     if (
       messageType === "online" &&
-      decodeMessage(message).toString() === "offline" &&
-      decodeMessage(message).toString() === "\0"
+      (decodeMessage(message).toString() === "offline" ||
+      decodeMessage(message).toString() === "\0")
     ) {
       useMQTTStore.getState().updateDevice({
         sid,
@@ -35,14 +35,33 @@ export function handleMessage(topic: string, message: BufferMessage) {
         sid,
         locked: decodeMessage(message).toString(),
       })
+      useMQTTStore.getState().updateCurrentDeviceStatus({
+        sid,
+        locked: decodeMessage(message).toString(),
+      })
     }
   }
   if (topic.startsWith("V/")) {
     const sid = topic.split("/")[1]
     if (decodeBinMessage(message).toString("hex").slice(8, 12) === "7e00") {
       const ecu = decodeBinMessage(message).toString("hex").slice(0, 4)
-      if (sid === useMQTTStore.getState().currentSid) {
+      if (sid === useMQTTStore.getState().currentDevice?.sid) {
         useMQTTStore.getState().updateECUList(ecu)
+      }
+    }
+    if(topic.split('/').includes('cyclic')){
+      if(sid === useMQTTStore.getState().currentDevice?.sid){
+        const decodedMessage = decodeBinMessage(message).toString('hex')
+        const ecu = decodedMessage.slice(0, 4)
+        const did = decodedMessage.slice(10, 14)
+        const value = decodedMessage.slice(14)
+        const timestamp = new Date().toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          fractionalSecondDigits: 3,
+        })
+        useMQTTStore.getState().updateLiveData(ecu,did,value,timestamp)
       }
     }
   }
