@@ -59,7 +59,7 @@ export function handleMessage(topic: string, message: BufferMessage) {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
-          fractionalSecondDigits: 3,
+          fractionalSecondDigits: 2,
         })
         useMQTTStore.getState().updateLiveData(ecu,did,value,timestamp)
       }

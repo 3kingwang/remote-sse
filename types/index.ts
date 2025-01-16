@@ -55,12 +55,14 @@ export type ECU = {
   address: string
   name: string
 }
+
+
 export type DidValueProps = {
   ecu: string
   did: string
   data: {
     raw: string
-    parsed?: string
+    parsed?: number | null
     timestamp: string
   }[]
 }

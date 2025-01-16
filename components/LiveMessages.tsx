@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
-import React, { useEffect, useState } from "react"
-import { handleMessage } from "@/lib/messageHandler"
+import React, { useEffect, useState } from 'react'
+import { handleMessage } from '@/lib/messageHandler'
 
 import {
   Card,
@@ -9,37 +9,38 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "./ui/card"
-import { Label } from "./ui/label"
-import { VinList } from "./VinList"
-import { EcuList } from "./EcuList"
-import { LiveData } from "./LiveData"
-
+} from './ui/card'
+import { Label } from './ui/label'
+import { VinList } from './VinList'
+import { EcuList } from './EcuList'
+import { LiveData } from './LiveData'
 
 const LiveMessages = () => {
-  const [error, setError] = useState<string | null>(null) // For 
-  useEffect(() => {
-    
-    const connectToServer = () => {
-      const eventSource = new EventSource("/api/mqtt")
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-      eventSource.addEventListener("message", (event) => {
+  useEffect(() => {
+    const connectToServer = () => {
+      const eventSource = new EventSource('/api/mqtt')
+
+      eventSource.addEventListener('message', (event) => {
         try {
           const data = JSON.parse(event.data)
           if (data && data.topic && data.message) {
             handleMessage(data.topic, data.message)
+            setLoading(false) // 数据成功接收，停止加载状态
           }
         } catch (err) {
-          setError("Failed to process incoming message.")
-          console.error("Error parsing SSE message:", err)
+          setError('Failed to process incoming message.')
+          console.error('Error parsing SSE message:', err)
         }
       })
 
-      eventSource.addEventListener("error", () => {
+      eventSource.addEventListener('error', () => {
         if (eventSource.readyState === EventSource.CLOSED) {
-          setError("Connection closed by server.")
+          setError('Connection closed by server. Retrying...')
         } else {
-          setError("Error in receiving SSE.")
+          setError('Error in receiving SSE. Retrying...')
         }
 
         // 尝试重新连接
@@ -60,6 +61,7 @@ const LiveMessages = () => {
 
   return (
     <div>
+      {loading && <div>Loading live data...</div>}
       {error && <div className="error-message">{error}</div>}
       <Card>
         <CardHeader>
