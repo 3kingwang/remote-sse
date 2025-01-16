@@ -128,10 +128,14 @@ export const useMQTTStore = create<State & Actions>()((set) => ({
       )
 
       if (ecuDidIndex === -1) {
-        newLiveData.push({ ecu, did, data: [{ raw: value,parsed: decodeDid(did, value), timestamp }] })
+        newLiveData.push({
+          ecu,
+          did,
+          data: [{ raw: value, parsed: decodeDid(did, value), timestamp }],
+        })
       } else {
         const item = newLiveData[ecuDidIndex]
-        if (item.data.length >50) item.data.shift()
+        if (item.data.length > 100) item.data.shift()
         item.data.push({ raw: value, parsed: decodeDid(did, value), timestamp })
       }
 

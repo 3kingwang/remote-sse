@@ -20,9 +20,15 @@ const LiveChart = function ({ dataItem }: { dataItem: DidValueProps }) {
       data: dataItem.data.map((item) => item.timestamp),
       axisLabel: {
         fontSize: 8,
-        interval: Math.floor(dataItem.data.length / 20),
+        interval: 5,
         rotate: 45, // Rotate to avoid overlap
+        overflow: 'truncate',
+        formatter: function (value: string) {
+          // Customize label formatting
+          return value.slice(0, 10) // Show only the first 10 characters of the timestamp
+        },
       },
+
       axisLine: {
         show: true,
       },
@@ -30,12 +36,13 @@ const LiveChart = function ({ dataItem }: { dataItem: DidValueProps }) {
     yAxis: {
       type: 'value',
       axisLabel: {
-        fontSize: 10,
-        margin: 10,
-        interval: Math.ceil(
-          Math.max(...(dataItem.data.map((item) => item.parsed) as number[]))
-        ), // Adjust Y-axis label interval
-      },
+        fontSize: 8,
+        margin: 8,
+        interval: 0,
+        formatter: function (value: number) {
+          // Customize label formatting if needed
+          return value.toLocaleString()
+      }},
       axisLine: {
         show: true,
       },
@@ -47,7 +54,7 @@ const LiveChart = function ({ dataItem }: { dataItem: DidValueProps }) {
       },
       min: Math.min(...(dataItem.data.map((item) => item.parsed) as number[])),
       max: Math.max(...(dataItem.data.map((item) => item.parsed) as number[])),
-      splitNumber: 10, // Number of ticks on the Y-axis
+      splitNumber: 5, // Number of ticks on the Y-axis
     },
     series: [
       {
@@ -79,10 +86,16 @@ const LiveChart = function ({ dataItem }: { dataItem: DidValueProps }) {
         end: 100,
       },
     ],
+    toolbox: {
+      feature: {
+        saveAsImage: {},
+        dataView: {},
+      },
+      left: 'right',
+    },
   })
 
   useEffect(() => {
-    // Define the interval for updates (e.g., every 200ms)
     const interval = setInterval(() => {
       const updatedMin = Math.min(
         ...(dataItem.data.map((item) => item.parsed) as number[])
@@ -96,13 +109,12 @@ const LiveChart = function ({ dataItem }: { dataItem: DidValueProps }) {
         xAxis: {
           ...options.xAxis,
           data: dataItem.data.map((item) => item.timestamp),
-          interval: Math.floor(dataItem.data.length / 5),
+          interval: Math.floor(dataItem.data.length / 10),
         },
         yAxis: {
           ...options.yAxis,
           min: updatedMin, // Dynamically update min value
           max: updatedMax, // Dynamically update max value
-          interval: Math.ceil((updatedMax - updatedMin) / 10), // Dynamically update interval
         },
         series: [
           {
@@ -112,13 +124,13 @@ const LiveChart = function ({ dataItem }: { dataItem: DidValueProps }) {
         ],
       }
       setOptions(updatedOptions)
-    }, 1) // Adjust this value as needed for your data update frequency
+    }, 0.1) // Adjust this value as needed for your data update frequency
 
     return () => clearInterval(interval) // Cleanup on component unmount
   }, [dataItem, options])
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 mr-2">
       <ReactEcharts
         option={options} // Pass the updated chart options to the component
         style={{ height: '450px', width: '100%' }}
