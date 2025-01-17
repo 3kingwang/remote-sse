@@ -7,6 +7,12 @@ import { loginSchema } from './schema'
 const users = [
   { id: '1', username: 'test2', password: '123456' },
   { id: '2', username: 'xwang72', password: 'xwang72' },
+  { id: '3', username: 'zhan5', password: 'zhan5' },
+  { id: '4', username: 'gzhu1', password: 'gzhu1' },
+  { id: '5', username: 'xwang30', password: 'xwang30' },
+  { id: '6', username: 'xchen18', password: 'xchen18' },
+  { id: '7', username: 'syang5', password: 'syang5' },
+  { id: '8', username: 'hchen9', password: 'hchen9' }
 ]
 
 export async function login(prevState: unknown, formData: FormData) {
