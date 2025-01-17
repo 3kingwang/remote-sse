@@ -1,12 +1,12 @@
-"use server"
+'use server'
 
-import { createSession, deleteSession } from "@/lib/session"
-import { redirect } from "next/navigation"
-import { loginSchema } from "./schema"
+import { createSession, deleteSession } from '@/lib/session'
+import { redirect } from 'next/navigation'
+import { loginSchema } from './schema'
 
 const users = [
-  { id: "1", username: "test2", password: "123456" },
-  { id: "2", username: "xwang72", password: "xwang72" },
+  { id: '1', username: 'test2', password: '123456' },
+  { id: '2', username: 'xwang72', password: 'xwang72' },
 ]
 
 export async function login(prevState: unknown, formData: FormData) {
@@ -20,20 +20,22 @@ export async function login(prevState: unknown, formData: FormData) {
 
   const { username, password } = result.data
 
-  const user = users.find((u) => u.username === username && u.password === password)
+  const user = users.find(
+    (u) => u.username === username && u.password === password
+  )
   if (!user) {
     return {
       errors: {
-        username: ["Invalid username or password"],
+        username: ['Invalid username or password'],
       },
     }
   }
-  await createSession(user.id, user.username,user.password)
+  await createSession(user.id, user.username, user.password)
 
-  redirect("/dashboard")
+  redirect('/dashboard')
 }
 
 export async function logout() {
   await deleteSession()
-  redirect("/login")
+  redirect('/login')
 }

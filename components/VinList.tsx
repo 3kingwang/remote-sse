@@ -4,21 +4,22 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { useMQTTStore } from "@/lib/store"
-import { Badge } from "./ui/badge"
+} from '@/components/ui/select'
+import { useMQTTStore } from '@/lib/store'
+import { Badge } from './ui/badge'
+import { useEffect, useState } from 'react'
 
 export function VinList() {
   const devices = useMQTTStore((state) => state.devices)
   const updateCurrentDevice = useMQTTStore((state) => state.updateCurrentDevice)
   const currentDevice = useMQTTStore((state) => state.currentDevice)
-  const selectedDevice = devices.find((device) => device.sid === currentDevice?.sid)
- 
+  const [value, setValue] = useState(currentDevice?.sid ?? undefined)
+  useEffect(() => {
+    setValue(currentDevice?.sid ?? devices[0]?.sid)
+  }, [currentDevice]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Select
-      value={
-        selectedDevice && selectedDevice.online ? selectedDevice.sid : devices[0]?.sid
-      }
+      value={value}
       onValueChange={(value) => {
         updateCurrentDevice(value)
       }}

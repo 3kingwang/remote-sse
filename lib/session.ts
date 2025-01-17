@@ -12,9 +12,9 @@ export async function createSession(
 ) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   const session = await encrypt({ userId, username, password, expiresAt })
-  ;(await cookies()).set("session", session, {
+  return (await cookies()).set("session", session, {
     httpOnly: true,
-    secure: true,
+    secure: false,
     expires: expiresAt,
   })
 }
