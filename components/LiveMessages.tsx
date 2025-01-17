@@ -14,14 +14,24 @@ import { Label } from './ui/label'
 import { VinList } from './VinList'
 import { EcuList } from './EcuList'
 import { LiveData } from './LiveData'
+import { toast } from 'sonner'
 
 const LiveMessages = () => {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [retryCount, setRetryCount] = useState(0)
+  const maxRetries = 5 // 最大重连次数
 
   useEffect(() => {
+    let eventSource: EventSource | null = null
+
     const connectToServer = () => {
-      const eventSource = new EventSource('/api/mqtt')
+      // 确保关闭旧的连接
+      if (eventSource) {
+        eventSource.close()
+      }
+
+      eventSource = new EventSource('/api/mqtt')
 
       eventSource.addEventListener('message', (event) => {
         try {
@@ -29,6 +39,8 @@ const LiveMessages = () => {
           if (data && data.topic && data.message) {
             handleMessage(data.topic, data.message)
             setLoading(false) // 数据成功接收，停止加载状态
+            setError(null) // 清除错误状态
+            setRetryCount(0) // 重置重连计数器
           }
         } catch (err) {
           setError('Failed to process incoming message.')
@@ -37,27 +49,36 @@ const LiveMessages = () => {
       })
 
       eventSource.addEventListener('error', () => {
-        if (eventSource.readyState === EventSource.CLOSED) {
-          setError('Connection closed by server. Retrying...')
+        if (eventSource?.readyState === EventSource.CLOSED) {
+          setError('Connection closed by server.')
         } else {
-          setError('Error in receiving SSE. Retrying...')
+          setError('Error in receiving SSE.')
         }
 
-        // 尝试重新连接
-        setTimeout(connectToServer, 3000) // 3秒后重新连接
+        if (retryCount < maxRetries) {
+          setTimeout(() => {
+            setRetryCount((prev) => prev + 1)
+            connectToServer()
+          }, 3000) // 3秒后重新连接
+        } else {
+          setError(`Failed to connect after ${maxRetries} attempts.`)
+          if (eventSource) {
+            eventSource.close() // 确保关闭连接
+          }
+        }
       })
-
-      return eventSource
     }
 
     // 初始化连接
-    const eventSource = connectToServer()
+    connectToServer()
 
     // Cleanup the connection when the component is unmounted
     return () => {
-      eventSource.close()
+      if (eventSource) {
+        eventSource.close()
+      }
     }
-  }, [])
+  }, [retryCount]) // 将 retryCount 添加为依赖项
 
   return (
     <div>
