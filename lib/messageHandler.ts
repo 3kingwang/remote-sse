@@ -1,36 +1,44 @@
-import { useMQTTStore } from "./store"
+import { useMQTTStore } from './store'
 
 export interface BufferMessage {
-  type: "Buffer"
+  type: 'Buffer'
   data: number[]
 }
 export function handleMessage(topic: string, message: BufferMessage) {
-  if (topic.startsWith("VinList/")) {
-    const sid = topic.split("/")[1]
-    const messageType = topic.split("/")[2]
+  if (topic.startsWith('VinList/')) {
+    const sid = topic.split('/')[1]
+    const messageType = topic.split('/')[2]
     if (
-      messageType === "online" &&
-      decodeMessage(message).toString() !== "\0" &&
-      decodeMessage(message).toString() !== "offline"
+      messageType === 'online' &&
+      (decodeMessage(message).toString() !== '\0' ||
+        decodeMessage(message).toString() !== 'offline')
     ) {
+      console.log(sid, decodeMessage(message).toString())
       useMQTTStore.getState().updateDevice({
         sid,
-        vin: decodeMessage(message).toString().split(",")[0],
+        vin: decodeMessage(message).toString().split(',')[0],
         online: true,
       })
+      useMQTTStore.getState().clearState()
+      if (sid === useMQTTStore.getState().currentDevice?.sid) {
+        useMQTTStore.getState().updateCurrentDeviceStatus({
+          sid,
+          online: false,
+        })
+      }
     }
     if (
-      messageType === "online" &&
-      (decodeMessage(message).toString() === "offline" ||
-      decodeMessage(message).toString() === "\0")
+      messageType === 'online' &&
+      (decodeMessage(message).toString() === 'offline' ||
+        decodeMessage(message).toString() === '\0')
     ) {
       useMQTTStore.getState().updateDevice({
         sid,
         online: false,
-        locked: "free",
+        locked: 'free',
       })
     }
-    if (messageType === "locked") {
+    if (messageType === 'locked') {
       useMQTTStore.getState().updateDevice({
         sid,
         locked: decodeMessage(message).toString(),
@@ -41,27 +49,27 @@ export function handleMessage(topic: string, message: BufferMessage) {
       })
     }
   }
-  if (topic.startsWith("V/")) {
-    const sid = topic.split("/")[1]
-    if (decodeBinMessage(message).toString("hex").slice(8, 12) === "7e00") {
-      const ecu = decodeBinMessage(message).toString("hex").slice(0, 4)
+  if (topic.startsWith('V/')) {
+    const sid = topic.split('/')[1]
+    if (decodeBinMessage(message).toString('hex').slice(8, 12) === '7e00') {
+      const ecu = decodeBinMessage(message).toString('hex').slice(0, 4)
       if (sid === useMQTTStore.getState().currentDevice?.sid) {
         useMQTTStore.getState().updateECUList(ecu)
       }
     }
-    if(topic.split('/').includes('cyclic')){
-      if(sid === useMQTTStore.getState().currentDevice?.sid){
+    if (topic.split('/').includes('cyclic')) {
+      if (sid === useMQTTStore.getState().currentDevice?.sid) {
         const decodedMessage = decodeBinMessage(message).toString('hex')
         const ecu = decodedMessage.slice(0, 4)
         const did = decodedMessage.slice(10, 14)
         const value = decodedMessage.slice(14)
         const timestamp = new Date().toLocaleTimeString(undefined, {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
           fractionalSecondDigits: 2,
         })
-        useMQTTStore.getState().updateLiveData(ecu,did,value,timestamp)
+        useMQTTStore.getState().updateLiveData(ecu, did, value, timestamp)
       }
     }
   }
@@ -83,20 +91,20 @@ export const publishMessage = async (
 ) => {
   try {
     console.log(topic, message, type, retain)
-    const response = await fetch("/api/mqtt", {
-      method: "POST",
+    const response = await fetch('/api/mqtt', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ topic, message, type, retain }),
     })
 
     if (response.ok) {
-      console.log("Message published successfully")
+      console.log('Message published successfully')
     } else {
-      console.error("Failed to publish message")
+      console.error('Failed to publish message')
     }
   } catch (error) {
-    console.error("Error publishing message:", error)
+    console.error('Error publishing message:', error)
   }
 }

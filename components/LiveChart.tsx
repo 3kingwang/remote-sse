@@ -124,7 +124,7 @@ const LiveChart = function ({ dataItem }: { dataItem: DidValueProps }) {
         ],
       }
       setOptions(updatedOptions)
-    }, 0.1) // Adjust this value as needed for your data update frequency
+    }, 1) // Adjust this value as needed for your data update frequency
 
     return () => clearInterval(interval) // Cleanup on component unmount
   }, [dataItem, options])
@@ -133,7 +133,7 @@ const LiveChart = function ({ dataItem }: { dataItem: DidValueProps }) {
     <div className="flex flex-col gap-2 mr-2">
       <ReactEcharts
         option={options} // Pass the updated chart options to the component
-        style={{ height: '450px', width: '100%' }}
+        style={{ height: '400px', width: '100%' }}
       />
     </div>
   )

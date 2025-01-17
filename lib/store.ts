@@ -6,7 +6,7 @@ import { DefaultPublishPayload } from '@/constants/DefaultPayload'
 
 type State = {
   currentUser: string
-  currentDevice: Device | null
+  currentDevice: Device | undefined
   devices: Device[]
   ECUList: ECU[]
   publishPayload: PublishPayloadProps
@@ -24,13 +24,14 @@ type Actions = {
     did: string,
     value: string,
     timestamp: string
-  ) => void
+  ) => void,
+  clearState:()=>void
 }
 
 export const useMQTTStore = create<State & Actions>()((set) => ({
   currentUser:
     (typeof window !== 'undefined' && localStorage.getItem('username')) || '',
-  currentDevice: null,
+  currentDevice: undefined,
   devices: [],
   ECUList: [{ address: 'e400', name: getEcuName('e400') }],
   publishPayload: DefaultPublishPayload,
@@ -88,7 +89,11 @@ export const useMQTTStore = create<State & Actions>()((set) => ({
           }, 0)
         }
       }
-      return { currentDevice: state.devices.find((d) => d.sid === sid) || null }
+      return {
+        currentDevice: state.devices.find((d) => d.sid === sid) || undefined,
+        liveData: [],
+        ECUList: [{ address: 'e400', name: getEcuName('e400') }],
+      }
     }),
   updateECUList: (ecu: string) =>
     set((state) => {
@@ -108,7 +113,7 @@ export const useMQTTStore = create<State & Actions>()((set) => ({
     set((state) => {
       if (state.currentDevice?.sid === device.sid) {
         if (device.online === false) {
-          return { currentDevice: null }
+          return { currentDevice: undefined }
         }
         return { currentDevice: { ...state.currentDevice, ...device } }
       } else {
@@ -141,4 +146,9 @@ export const useMQTTStore = create<State & Actions>()((set) => ({
 
       return { liveData: newLiveData }
     }),
+  clearState: () =>
+    set(() => ({
+      ECUList: [{ address: 'e400', name: getEcuName('e400') }],
+      liveData: [],
+    })),
 }))
