@@ -14,7 +14,6 @@ import { Label } from './ui/label'
 import { VinList } from './VinList'
 import { EcuList } from './EcuList'
 import { LiveData } from './LiveData'
-import { toast } from 'sonner'
 
 const LiveMessages = () => {
   const [error, setError] = useState<string | null>(null)
