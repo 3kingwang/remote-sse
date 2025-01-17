@@ -17,7 +17,7 @@ export function VinList() {
   return (
     <Select
       value={
-        selectedDevice && selectedDevice.online ? selectedDevice.sid : devices[0].sid
+        selectedDevice && selectedDevice.online ? selectedDevice.sid : devices[0]?.sid
       }
       onValueChange={(value) => {
         updateCurrentDevice(value)
